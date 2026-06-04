@@ -1,0 +1,297 @@
+{
+  "name": "Security Alert Automation - Salman",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "security-alert",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "0743107b-c2be-48d2-8ddc-d48c46350fa8",
+      "name": "Security Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -448,
+        32
+      ],
+      "webhookId": ""
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.text.trim().toLowerCase() }}",
+                    "rightValue": "critical",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "734b4942-a0f7-43fc-bf57-b6b83c0d90ef"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "critical"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.text.trim().toLowerCase() }}",
+                    "rightValue": "high",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "766a28b7-063b-4449-b224-837e82a109fa"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "high"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.text.trim().toLowerCase() }}",
+                    "rightValue": "medium",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "20e184ab-a038-4be7-a607-dbfb3dc50711"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "medium"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "b5cc4fab-27df-4d74-b115-5a1b3fb0d77b",
+                    "leftValue": "={{ $json.text.trim().toLowerCase() }}",
+                    "rightValue": "low",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "low"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "5ce7a247-d7dc-4b82-9785-76a9de836778",
+      "name": "Threat Level Router",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        -16,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_GOOGLE_SHEET_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Security Logs"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "1672eb57-eb32-4f72-af7d-8c3874f18d24",
+      "name": "Log to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        208,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "your-email@example.com",
+        "subject": "={{$json.text}} - Security Alert",
+        "message": "=<h2>🚨 Security Alert</h2>\n<p><strong>Threat Level:</strong> {{ $json.text }}</p>\n<p><strong>Alert Type:</strong> {{ $('Security Webhook').item.json.body.alert_type }}</p>\n<p><strong>Severity:</strong> {{ $('Security Webhook').item.json.body.severity }}</p>\n<p><strong>Source IP:</strong> {{ $('Security Webhook').item.json.body.source_ip }}</p>\n<p><strong>Description:</strong> {{ $('Security Webhook').item.json.body.description }}</p>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "712850fa-c9a9-4c1c-859c-188a14f66459",
+      "name": "Send Email Alert",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [
+        208,
+        32
+      ],
+      "webhookId": ""
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"status\": \"received\", \"message\": \"Alert processed\"}",
+        "options": {}
+      },
+      "id": "0841ed5b-79ee-45f2-a88e-4632c8ecb2fb",
+      "name": "Webhook Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        208,
+        -128
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Map the incoming severity to a threat level\nconst body = $input.first().json.body || {};\nlet severity = (body.severity || '').toString().trim().toLowerCase();\n\n// Normalize common variations\nconst map = {\n  'critical': 'critical',\n  'crit': 'critical',\n  'high': 'high',\n  'medium': 'medium',\n  'med': 'medium',\n  'moderate': 'medium',\n  'low': 'low',\n  'info': 'low',\n  'informational': 'low'\n};\n\nlet text = map[severity] || 'medium';\n\nreturn [{ json: { text, body } }];"
+      },
+      "id": "92747beb-112b-4502-8ae0-f48524adb383",
+      "name": "Determine Threat Level",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -240,
+        32
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Threat Level Router": {
+      "main": [
+        [
+          {
+            "node": "Send Email Alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Email Alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Email Alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Email Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Security Webhook": {
+      "main": [
+        [
+          {
+            "node": "Determine Threat Level",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Determine Threat Level": {
+      "main": [
+        [
+          {
+            "node": "Threat Level Router",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log to Google Sheets",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "nodeGroups": [],
+  "tags": []
+}
